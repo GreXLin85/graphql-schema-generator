@@ -9,14 +9,16 @@ const addTypeModifiers = (
   initialField: DMMF.Field,
   model: DMMF.Model,
   config?: Config,
+  isModelsOfSchema = false,
 ): DMMF.Field => {
-  const rules = config?.customRules?.afterAddingTypeModifiers
-    ? config.customRules.afterAddingTypeModifiers
-    : existingRules;
+  const rules = [
+    ...existingRules,
+    ...(config?.customRules?.beforeAddingTypeModifiers || []),
+  ];
 
   const newField = rules.reduce(
     (field, {matcher, transformer}: Rule): DMMF.Field => {
-      if (matcher(field, model)) {
+      if (matcher(field, model, isModelsOfSchema, config)) {
         return transformer(field);
       }
 

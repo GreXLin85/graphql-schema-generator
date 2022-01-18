@@ -77,7 +77,9 @@ describe('transpile', () => {
     };
 
     const model = await parse(prismaSchema);
-    expect(transpile(model, {customRules})).toBe(graphqlSchema);
+    expect(transpile(model, {customRules, ignoreWhereFilters: true})).toBe(
+      graphqlSchema,
+    );
   });
 
   it('adds queries', async () => {
@@ -114,7 +116,9 @@ describe('transpile', () => {
 
     const model = await parse(prismaSchema);
 
-    expect(transpile(model, {createQuery: 'true'})).toBe(graphqlSchema);
+    expect(
+      transpile(model, {createQuery: 'true', ignoreWhereFilters: true}),
+    ).toBe(graphqlSchema);
   });
 
   it('adds mutations', async () => {
@@ -173,7 +177,9 @@ describe('transpile', () => {
 
     const model = await parse(prismaSchema);
 
-    expect(transpile(model, {createMutation: 'true'})).toBe(graphqlSchema);
+    expect(
+      transpile(model, {createMutation: 'true', ignoreWhereFilters: true}),
+    ).toBe(graphqlSchema);
   });
 
   it('adds scalars', async () => {
@@ -200,7 +206,7 @@ describe('transpile', () => {
 
     const model = await parse(prismaSchema);
 
-    expect(transpile(model)).toBe(graphqlSchema);
+    expect(transpile(model, {ignoreWhereFilters: true})).toBe(graphqlSchema);
   });
 
   it('adds enums', async () => {
@@ -228,7 +234,7 @@ describe('transpile', () => {
 
     const model = await parse(prismaSchema);
 
-    expect(transpile(model)).toBe(graphqlSchema);
+    expect(transpile(model, {ignoreWhereFilters: true})).toBe(graphqlSchema);
   });
 
   it('adds models', async () => {
@@ -269,6 +275,6 @@ describe('transpile', () => {
 
     const model = await parse(prismaSchema);
 
-    expect(transpile(model)).toBe(graphqlSchema);
+    expect(transpile(model, {ignoreWhereFilters: true})).toBe(graphqlSchema);
   });
 });

@@ -26,6 +26,7 @@ generatorHandler({
         );
 
         config.customRules = module.default.rules;
+        config.argConfig = module.default.argConfig;
       }
 
       const result = await generateGraphqlSchema(options.datamodel, config);

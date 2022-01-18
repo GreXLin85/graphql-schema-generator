@@ -1,4 +1,5 @@
 import {DMMF} from '@prisma/generator-helper';
+import {removeBracketsOrExclamations} from '../../utils';
 import {Rule} from '../types';
 
 const addBrasket = (field: DMMF.Field): DMMF.Field => {
@@ -38,6 +39,27 @@ const rules: Rule[] = [
       return !isList && isRequired;
     },
     transformer: (field) => addExclamation(field),
+  },
+  {
+    matcher: (field, _model, isModelsOfSchema, config) => {
+      console.log({isModelsOfSchema, config});
+      if (
+        typeof isModelsOfSchema === 'boolean' &&
+        isModelsOfSchema &&
+        config?.argConfig?.fields
+      ) {
+        return !!config.argConfig.fields.includes(field.name);
+      }
+      return false;
+    },
+    transformer: (field) => {
+      return {
+        ...field,
+        name: `${field.name}(where:${removeBracketsOrExclamations(
+          field.type as string,
+        )}WhereInput)`,
+      };
+    },
   },
 ];
 

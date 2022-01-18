@@ -8,11 +8,12 @@ const convertType = (
   field: DMMF.Field,
   model: DMMF.Model,
   config?: Config,
+  isModelsOfSchema = false,
 ): DMMF.Field => {
   const {kind} = field;
 
   if (kind === 'scalar' || config?.customRules) {
-    return convertScalar(field, model, config);
+    return convertScalar(field, model, config, isModelsOfSchema);
   }
 
   // TODO

@@ -1,7 +1,7 @@
 import parse from './parse';
 import transpile from './transpile';
 
-import type {CustomRules} from './converters/types';
+import type {ArgConfig, CustomRules} from './converters/types';
 
 export const description = `
 """
@@ -14,6 +14,8 @@ Read more about in https://github.com/prisma-korea/graphql-schema-generator.
 `;
 export type Config = {
   customRules?: CustomRules;
+  argConfig?: ArgConfig;
+  ignoreWhereFilters?: boolean;
   [key: string]: any;
 };
 

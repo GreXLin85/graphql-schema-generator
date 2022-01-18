@@ -17,6 +17,7 @@ import type {Config} from './generateGraphqlSchema';
 const getTypeConvertedFields = (
   model: DMMF.Model,
   config?: Config,
+  isModelsOfSchema = false,
 ): DMMF.Field[] => {
   if (!model) {
     return [];
@@ -36,7 +37,6 @@ const getTypeConvertedFields = (
     },
     {},
   );
-
   const typeConvertedFields = model.fields.reduce(
     (collected: DMMF.Field[], field: DMMF.Field): DMMF.Field[] => {
       const {name} = field;
@@ -49,14 +49,14 @@ const getTypeConvertedFields = (
         f: DMMF.Field,
         m: DMMF.Model,
       ): DMMF.Field => {
-        return convertType(f, m, config);
+        return convertType(f, m, config, isModelsOfSchema);
       };
 
       const applyCustomRulesAfterTypeModifiersAddition = (
         f: DMMF.Field,
         m: DMMF.Model,
       ): DMMF.Field => {
-        return addTypeModifiers(f, m, config);
+        return addTypeModifiers(f, m, config, isModelsOfSchema);
       };
 
       const transformers = [
@@ -70,11 +70,11 @@ const getTypeConvertedFields = (
 
       try {
         const typeConvertedField = transformers.reduce((acc, transformer) => {
-          return transformer!(acc, model);
+          return transformer!(acc, model, config, isModelsOfSchema);
         }, field);
 
         return [...collected, typeConvertedField];
-      } catch {
+      } catch (err) {
         return collected;
       }
     },
@@ -179,7 +179,59 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
   });
 
   const mutationsOfSchema = mutationInputs + mutation;
+  let whereInputs: string[] = [];
+  if (config?.argConfig?.models) {
+    whereInputs = dataModel.names.reduce((inputs: string[], modelName) => {
+      if (!config.argConfig?.models?.includes(modelName)) {
+        return inputs;
+      }
+      const SUPPORTED_TYPES = [
+        'Int',
+        'Float',
+        'String',
+        'BigInt',
+        'Boolean',
+        'Decimal',
+        'DateTime',
+        'ID',
+      ];
+      const modelFields = getTypeConvertedFields(models[modelName], config);
 
+      const supportedFields = modelFields.reduce(
+        (fields: DMMF.Field[], cur) => {
+          const {type} = cur;
+          if (!SUPPORTED_TYPES.includes(removeExclamation(type as string))) {
+            return fields;
+          }
+          return [...fields, cur];
+        },
+        [],
+      );
+      const filters = {
+        ID: 'StringFilter',
+        Int: 'IntFilter',
+        Float: 'IntFilter',
+        String: 'StringFilter',
+        Boolean: 'BooleanFilter',
+        Decimal: 'IntFilter',
+        DateTime: 'DateTimeFilter',
+      };
+      const inputFields = supportedFields.map(
+        ({name, type}) =>
+          `${name}: ${filters[removeExclamation(type as string)]}`,
+      );
+
+      return [
+        ...inputs,
+
+        formatDefinition({
+          type: Definition.input,
+          name: `${modelName}WhereInput`,
+          fields: inputFields,
+        }),
+      ];
+    }, []);
+  }
   const scalars = extractScalars(dataModel);
 
   const scalarsOfSchema = scalars
@@ -200,10 +252,9 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
 
   const modelsOfSchema = names
     .map((name) => {
-      const fields = getTypeConvertedFields(models[name], config).map((field) =>
-        formatField(field),
+      const fields = getTypeConvertedFields(models[name], config, true).map(
+        (field) => formatField(field),
       );
-
       return formatDefinition({
         type: Definition.type,
         name,
@@ -213,13 +264,13 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
     .join('');
 
   const schema =
+    whereInputs +
     (config?.createQuery === 'true' ? queriesOfSchema : '') +
     (config?.createMutation === 'true' ? mutationsOfSchema : '') +
     scalarsOfSchema +
     enumsOfSchema +
     modelsOfSchema;
-
-  return sdl(schema);
+  return sdl(schema, !!config?.ignoreWhereFilters);
 };
 
 export default transpile;
