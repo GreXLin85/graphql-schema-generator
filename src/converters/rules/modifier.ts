@@ -42,7 +42,6 @@ const rules: Rule[] = [
   },
   {
     matcher: (field, _model, isModelsOfSchema, config) => {
-      console.log({isModelsOfSchema, config});
       if (
         typeof isModelsOfSchema === 'boolean' &&
         isModelsOfSchema &&

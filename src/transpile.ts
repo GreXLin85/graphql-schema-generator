@@ -181,11 +181,12 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
   const mutationsOfSchema = mutationInputs + mutation;
   let whereInputs: string[] = [];
   if (config?.argConfig?.models) {
+    let enumInputs = '';
     whereInputs = dataModel.names.reduce((inputs: string[], modelName) => {
       if (!config.argConfig?.models?.includes(modelName)) {
         return inputs;
       }
-      const SUPPORTED_TYPES = [
+      const NATIVE_TYPES = [
         'Int',
         'Float',
         'String',
@@ -196,16 +197,47 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
         'ID',
       ];
       const modelFields = getTypeConvertedFields(models[modelName], config);
+      const generateEnumInput = (field: DMMF.Field): string => {
+        let {type} = field;
+        type = removeExclamation(type as string);
+        return `input Enum${type}Filter {
+                  equals: ${type}
+                  in: [${type}]
+                  notIn: [${type}]
+                  not: Enum${type}Filter
+                }
 
-      const supportedFields = modelFields.reduce(
-        (fields: DMMF.Field[], cur) => {
+        `;
+      };
+      const {nativeFields, relation, enumFields} = modelFields.reduce(
+        (groups, cur) => {
           const {type} = cur;
-          if (!SUPPORTED_TYPES.includes(removeExclamation(type as string))) {
-            return fields;
+          if (NATIVE_TYPES.includes(removeExclamation(type as string))) {
+            return {
+              ...groups,
+              nativeFields: [...groups.nativeFields, cur],
+            };
           }
-          return [...fields, cur];
+          if (cur.kind === 'enum') {
+            return {
+              ...groups,
+              enumFields: [...groups.enumFields, cur],
+            };
+          }
+          if (cur.kind === 'object') {
+            return {
+              ...groups,
+              relation: [...groups.relation, cur],
+            };
+          }
+
+          return groups;
         },
-        [],
+        {nativeFields: [], enumFields: [], relation: []} as {
+          nativeFields: DMMF.Field[];
+          enumFields: DMMF.Field[];
+          relation: DMMF.Field[];
+        },
       );
       const filters = {
         ID: 'StringFilter',
@@ -216,10 +248,22 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
         Decimal: 'IntFilter',
         DateTime: 'DateTimeFilter',
       };
-      const inputFields = supportedFields.map(
+      const inputFields = nativeFields.map(
         ({name, type}) =>
           `${name}: ${filters[removeExclamation(type as string)]}`,
       );
+
+      if (enumFields.length) {
+        enumFields.forEach((field) => {
+          const enumType = `Enum${removeExclamation(
+            field.type as string,
+          )}Filter`;
+          if (!enumInputs.includes(enumType)) {
+            enumInputs += generateEnumInput(field);
+          }
+          inputFields.push(`${field.name}: ${enumType}`);
+        });
+      }
 
       return [
         ...inputs,
@@ -231,6 +275,7 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
         }),
       ];
     }, []);
+    whereInputs = [...whereInputs, enumInputs].filter(Boolean);
   }
   const scalars = extractScalars(dataModel);
 
