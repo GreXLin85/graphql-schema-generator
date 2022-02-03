@@ -41,11 +41,13 @@ const rules: Rule[] = [
     transformer: (field) => addExclamation(field),
   },
   {
-    matcher: (field, _model, isModelsOfSchema, config) => {
+    matcher: (field, model, isModelsOfSchema, config) => {
+      const typeName = removeBracketsOrExclamations(field.type as string);
       if (
         typeof isModelsOfSchema === 'boolean' &&
         isModelsOfSchema &&
-        config?.argConfig?.fields
+        config?.argConfig?.fields &&
+        config.argConfig.models.includes(typeName)
       ) {
         return !!config.argConfig.fields.includes(field.name);
       }
