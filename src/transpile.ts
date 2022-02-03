@@ -10,7 +10,7 @@ import formatDefinition from './formatters/formatDefinition';
 import formatField from './formatters/formatField';
 import formatScalar from './formatters/formatScalar';
 
-import {removeExclamation, sdl} from './utils';
+import {removeExclamation, removeParentheses, sdl} from './utils';
 
 import type {Config} from './generateGraphqlSchema';
 
@@ -301,13 +301,13 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
       const fields = getTypeConvertedFields(models[name], config, true).map(
         (field) => {
           if (field.isList) {
-            listFields.push(field.name);
+            listFields.push(removeParentheses(field.name));
           }
           return formatField(field);
         },
       );
       if (listFields.length) {
-        let cleanName = name.replace(/\(.*\)/g, '');
+        let cleanName = removeParentheses(name);
         let _countType = `type ${cleanName}Count\t{\n\t${listFields.join(
           ': Int\n\t',
         )}: Int\n}\n`;

@@ -15,3 +15,7 @@ export const removeExclamation = (s: string): string => {
 export const removeBracketsOrExclamations = (s: string): string => {
   return s.replace(/!|\[|\]/g, '');
 };
+
+export const removeParentheses = (s: string): string => {
+  return s.replace(/\(.*\)/g, '');
+};
