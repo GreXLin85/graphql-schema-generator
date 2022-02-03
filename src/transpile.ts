@@ -294,12 +294,27 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
       });
     })
     .join('');
-
+  const countTypes: string[] = [];
   const modelsOfSchema = names
     .map((name) => {
+      let listFields: string[] = [];
       const fields = getTypeConvertedFields(models[name], config, true).map(
-        (field) => formatField(field),
+        (field) => {
+          if (field.isList) {
+            listFields.push(field.name);
+          }
+          return formatField(field);
+        },
       );
+      if (listFields.length) {
+        let cleanName = name.replace(/\(.*\)/g, '');
+        let _countType = `type ${cleanName}Count\t{\n\t${listFields.join(
+          ': Int\n\t',
+        )}: Int\n}\n`;
+        countTypes.push(_countType);
+        fields.push(`_count: ${cleanName}Count`);
+      }
+
       return formatDefinition({
         type: Definition.type,
         name,
@@ -314,7 +329,8 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
     (config?.createMutation === 'true' ? mutationsOfSchema : '') +
     scalarsOfSchema +
     enumsOfSchema +
-    modelsOfSchema;
+    modelsOfSchema +
+    countTypes;
   return sdl(schema, !!config?.ignoreWhereFilters);
 };
 
