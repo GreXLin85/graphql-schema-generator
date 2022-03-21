@@ -58,7 +58,7 @@ const rules: Rule[] = [
         ...field,
         name: `${field.name}(where:${removeBracketsOrExclamations(
           field.type as string,
-        )}WhereInput)`,
+        )}WhereInput, take:Int, skip:Int)`,
       };
     },
   },
