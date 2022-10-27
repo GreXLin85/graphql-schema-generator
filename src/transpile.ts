@@ -37,6 +37,7 @@ const getTypeConvertedFields = (
     },
     {},
   );
+
   const typeConvertedFields = model.fields.reduce(
     (collected: DMMF.Field[], field: DMMF.Field): DMMF.Field[] => {
       const {name} = field;
@@ -186,6 +187,7 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
       if (!config.argConfig?.models?.includes(modelName)) {
         return inputs;
       }
+
       const NATIVE_TYPES = [
         'Int',
         'Float',
@@ -200,6 +202,7 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
       const generateEnumInput = (field: DMMF.Field): string => {
         let {type} = field;
         type = removeExclamation(type as string);
+
         return `input Enum${type}Filter {
                   equals: ${type}
                   in: [${type}]
@@ -209,6 +212,7 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
 
         `;
       };
+
       const {nativeFields, relation, enumFields} = modelFields.reduce(
         (groups, cur) => {
           const {type} = cur;
@@ -218,12 +222,14 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
               nativeFields: [...groups.nativeFields, cur],
             };
           }
+
           if (cur.kind === 'enum') {
             return {
               ...groups,
               enumFields: [...groups.enumFields, cur],
             };
           }
+
           if (cur.kind === 'object') {
             return {
               ...groups,
@@ -239,6 +245,7 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
           relation: DMMF.Field[];
         },
       );
+
       const filters = {
         ID: 'StringFilter',
         Int: 'IntFilter',
@@ -248,6 +255,7 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
         Decimal: 'IntFilter',
         DateTime: 'DateTimeFilter',
       };
+
       const inputFields = nativeFields.map(
         ({name, type}) =>
           `${name}: ${filters[removeExclamation(type as string)]}`,
@@ -258,9 +266,11 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
           const enumType = `Enum${removeExclamation(
             field.type as string,
           )}Filter`;
+
           if (!enumInputs.includes(enumType)) {
             enumInputs += generateEnumInput(field);
           }
+
           inputFields.push(`${field.name}: ${enumType}`);
         });
       }
@@ -277,6 +287,7 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
     }, []);
     whereInputs = [...whereInputs, enumInputs].filter(Boolean);
   }
+
   const scalars = extractScalars(dataModel);
 
   const scalarsOfSchema = scalars
@@ -303,9 +314,11 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
           if (field.isList) {
             listFields.push(removeParentheses(field.name));
           }
+
           return formatField(field);
         },
       );
+
       if (listFields.length) {
         let cleanName = removeParentheses(name);
         let _countType = `type ${cleanName}Count\t{\n\t${listFields.join(
@@ -331,6 +344,7 @@ const transpile = (dataModel: DataModel, config?: Config): string => {
     enumsOfSchema +
     modelsOfSchema +
     countTypes;
+
   return sdl(schema, !!config?.ignoreWhereFilters);
 };
 

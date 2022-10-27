@@ -51,6 +51,7 @@ const rules: Rule[] = [
       ) {
         return !!config.argConfig.fields.includes(field.name);
       }
+
       return false;
     },
     transformer: (field) => {

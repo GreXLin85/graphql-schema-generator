@@ -59,6 +59,7 @@ type ArgConfig = {
   // Fields that should be generated
   fields: string[];
 };
+
 export type {Rule, CustomRules, ArgConfig};
 
 export {SDL, PSL, Scalar, ReservedName, Definition};
