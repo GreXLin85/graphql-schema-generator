@@ -38,20 +38,20 @@ describe('DataModel', () => {
       'name',
       'dbName',
       'fields',
-      'isGenerated',
       'primaryKey',
       'uniqueFields',
       'uniqueIndexes',
+      'isGenerated',
     ]);
 
     expect(Object.keys(User)).toEqual([
       'name',
       'dbName',
       'fields',
-      'isGenerated',
       'primaryKey',
       'uniqueFields',
       'uniqueIndexes',
+      'isGenerated',
     ]);
   });
 
